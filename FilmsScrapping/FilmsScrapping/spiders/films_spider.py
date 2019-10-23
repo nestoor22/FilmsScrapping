@@ -24,12 +24,13 @@ class ExFsNetFilmsSpider(scrapy.Spider):
             yield scrapy.Request(url=next_page_link, callback=self.parse)
 
     def parse_info(self, response):
+        from unicodedata import normalize
         # Create a dict for storing information
         information_about_film = dict()
 
         # Save film name in english and russian.
-        information_about_film['name_rus'] = response.css('h1[class="view-caption"]::text').get()
-        information_about_film['name_eng'] = response.css('h2[class="view-caption2"]::text').get()
+        information_about_film['name_rus'] = clean_names(response.css('h1[class="view-caption"]::text').get())
+        information_about_film['name_eng'] = clean_names(response.css('h2[class="view-caption2"]::text').get())
 
         # Add IMDB rating
         information_about_film['imdb_rating'] = float(response.css('div[class="in_kp_imdb"] '
@@ -48,3 +49,8 @@ class ExFsNetFilmsSpider(scrapy.Spider):
             information_index += 1
 
         yield information_about_film
+
+
+def clean_names(name):
+    import re
+    return re.sub(r'[^A-Za-zА-Яа-я\s\d\\.,\-?!]', ' ', name)

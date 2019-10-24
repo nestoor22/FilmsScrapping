@@ -27,7 +27,6 @@ class ExFsNetFilmsSpider(scrapy.Spider):
             yield scrapy.Request(url=next_page_link, callback=self.parse)
 
     def parse_info(self, response):
-        from unicodedata import normalize
         # Create a dict for storing information
         information_about_film = dict()
 
@@ -53,7 +52,11 @@ class ExFsNetFilmsSpider(scrapy.Spider):
                 information_about_film[story_info_keys[information_index]] = one_property
             information_index += 1
 
+        information_about_film['release date'] = int(information_about_film['release date'][0])
         information_about_film['plot'] = clean_strings_from_bad_characters(response.css('div[class="FullstorySubFormText"]::text').get())
+
+        information_about_film['actors'] = response.css('div[class="FullstoryKadrFormImgAc"] '
+                                                        'a[class="MiniPostNameActors"]::text').getall()
         yield information_about_film
 
 

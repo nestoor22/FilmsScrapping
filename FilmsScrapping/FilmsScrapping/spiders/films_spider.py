@@ -30,6 +30,8 @@ class ExFsNetFilmsSpider(scrapy.Spider):
         # Create a dict for storing information
         information_about_film = dict()
 
+        information_about_film['poster_as_base64'] = get_image_from_url_as_base64(response.css('div[class="FullstoryFormLeft"] img::attr(src)').get())
+
         # Save film name in english and russian.
         information_about_film['name_rus'] = clean_strings_from_bad_characters(response.css('h1[class="view-caption"]::text').get())
         information_about_film['name_eng'] = clean_strings_from_bad_characters(response.css('h2[class="view-caption2"]::text').get())
@@ -57,6 +59,7 @@ class ExFsNetFilmsSpider(scrapy.Spider):
 
         information_about_film['actors'] = response.css('div[class="FullstoryKadrFormImgAc"] '
                                                         'a[class="MiniPostNameActors"]::text').getall()
+
         yield information_about_film
 
 
@@ -64,3 +67,10 @@ def clean_strings_from_bad_characters(string):
     import re
     if string:
         return re.sub(r'[^A-Za-zА-Яа-я\\.,\d?! ]', ' ', str(string))
+
+
+def get_image_from_url_as_base64(image_url):
+    import base64
+    import requests
+
+    return base64.b64encode(requests.get('http://ex-fs.net/' + image_url).content)

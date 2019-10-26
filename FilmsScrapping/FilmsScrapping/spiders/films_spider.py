@@ -1,7 +1,7 @@
 import scrapy
 
 
-translate_for_keys = {'Год': 'release date', 'Страна': 'country', 'Жанр': 'genre'}
+translate_for_keys = {'Год': 'release_date', 'Страна': 'country', 'Жанр': 'genre'}
 
 
 # for running - scrapy crawl ex_fs_net_films_spider
@@ -30,7 +30,7 @@ class ExFsNetFilmsSpider(scrapy.Spider):
         # Create a dict for storing information
         information_about_film = dict()
 
-        information_about_film['poster_as_base64'] = 'http://ex-fs.net/' + response.css('div[class="FullstoryFormLeft"]'
+        information_about_film['poster_url'] = 'http://ex-fs.net/' + response.css('div[class="FullstoryFormLeft"]'
                                                                                         ' img::attr(src)').get()
 
         # Save film name in english and russian.
@@ -55,7 +55,7 @@ class ExFsNetFilmsSpider(scrapy.Spider):
                 information_about_film[story_info_keys[information_index]] = one_property
             information_index += 1
 
-        information_about_film['release_date'] = int(information_about_film['release date'][0])
+        information_about_film['release_date'] = int(information_about_film['release_date'][0])
         information_about_film['plot'] = clean_strings_from_bad_characters(response.css('div[class="FullstorySubFormText"]::text').get())
 
         information_about_film['actors'] = response.css('div[class="FullstoryKadrFormImgAc"] '

@@ -149,6 +149,12 @@ def get_actors_for_film(film_name):
     return list_of_actors
 
 
+def get_genres_for_film(film_name):
+    film_database_cursor.execute(f"SELECT genre_name from films_db.genres "
+                                 f"JOIN films_db.film_genre ON genres.genre_id = film_genre.genre_id "
+                                 f"JOIN films_db.films ON films_db.films.film_id=film_genre.film_id"
+                                 f" WHERE films.name_rus='{film_name}'")
+    list_of_genres = [genre_dict['genre_name'] for genre_dict in film_database_cursor.fetchall()]
+    return list_of_genres
 
-
-get_actors_for_film('Зеровилль')
+get_genres_for_film('Зеровилль')

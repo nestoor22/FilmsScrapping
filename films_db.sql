@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `films_db`.`films` (
   `imdb_rating` FLOAT NULL DEFAULT NULL,
   `release_date` INT NOT NULL,
   `plot` LONGTEXT NOT NULL,
-  `poster_as_base64` LONGBLOB NULL DEFAULT NULL,
+  `poster_url` VARCHAR(500) NULL DEFAULT NULL,
   PRIMARY KEY (`film_id`),
   INDEX `Name_Index` (`name_rus` ASC, `name_eng` ASC) VISIBLE,
   INDEX `Year` (`release_date` ASC) VISIBLE)

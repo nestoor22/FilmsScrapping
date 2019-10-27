@@ -8,9 +8,21 @@ film_database_cursor = film_database_connection.cursor(dictionary=True,
                                                        buffered=True)
 
 
+def clean_json_from_incomplete_data(json_info):
+    all_columns_in_json = ['poster_url', 'name_rus', 'name_eng', 'imdb_rating',
+                           'release_date', 'country', 'genre', 'plot', 'actors']
+
+    for one_json in json_info:
+        if not all(column in one_json.keys() for column in all_columns_in_json):
+            json_info.remove(one_json)
+
+    return json_info
+
+
 def save_films_to_db():
 
-    films_info = json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json', 'r'))
+    films_info = clean_json_from_incomplete_data(json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json',
+                                                                'r')))
     film_database_cursor.execute("DESC films_db.films")
     films_info_columns = [column_info['Field'] for column_info in film_database_cursor.fetchall()]
 
@@ -21,29 +33,21 @@ def save_films_to_db():
         values = ["'" + str(info_about_film[column]) + "'" for column in columns]
         columns_to_sql = ', '.join(columns)
         values_to_sql = ', '.join(values)
+
         try:
             film_database_cursor.execute("INSERT INTO films_db.films(%s) VALUES(%s)" % (columns_to_sql, values_to_sql))
         except Exception:
             continue
 
-        if 'actors' in info_about_film.keys():
-            add_actors_to_db(info_about_film['actors'])
-            create_relationships_film_actor(index, info_about_film['actors'])
-        else:
-            print('actors not in json')
+        add_actors_to_db(info_about_film['actors'])
+        create_relationships_film_actor(index, info_about_film['actors'])
 
-        if 'genre' in info_about_film.keys():
-            add_genre_to_db(info_about_film['genre'])
-            create_relationships_film_genre(index, info_about_film['genre'])
+        add_genre_to_db(info_about_film['genre'])
+        create_relationships_film_genre(index, info_about_film['genre'])
 
-        else:
-            print('genre not in json')
+        add_country_to_db(info_about_film['country'])
+        create_relationships_film_country(index, info_about_film['country'])
 
-        if 'country' in info_about_film.keys():
-            add_country_to_db(info_about_film['country'])
-            create_relationships_film_country(index, info_about_film['country'])
-        else:
-            print('country not in json')
         index += 1
 
 

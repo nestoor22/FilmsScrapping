@@ -138,4 +138,17 @@ def create_relationships_film_actor(film_id, list_of_actors):
 
     film_database_connection.commit()
 
-save_films_to_db()
+
+def get_actors_for_film(film_name):
+    film_database_cursor.execute(f"SELECT name from films_db.actors "
+                                 f"JOIN films_db.film_actors ON actors.actor_id = film_actors.actor_id "
+                                 f"JOIN films_db.films ON films_db.films.film_id=film_actors.film_id"
+                                 f" WHERE films.name_rus='{film_name}'")
+
+    list_of_actors = [actor_dict['name'] for actor_dict in film_database_cursor.fetchall()]
+    return list_of_actors
+
+
+
+
+get_actors_for_film('Зеровилль')

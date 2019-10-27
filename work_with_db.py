@@ -157,4 +157,14 @@ def get_genres_for_film(film_name):
     list_of_genres = [genre_dict['genre_name'] for genre_dict in film_database_cursor.fetchall()]
     return list_of_genres
 
-get_genres_for_film('Зеровилль')
+
+def get_countries_for_film(film_name):
+    film_database_cursor.execute(f"SELECT name from films_db.countries "
+                                 f"JOIN films_db.film_country ON countries.country_id = film_country.country_id "
+                                 f"JOIN films_db.films ON films_db.films.film_id=film_country.film_id"
+                                 f" WHERE films.name_rus='{film_name}'")
+    list_of_countries = [country_dict['name'] for country_dict in film_database_cursor.fetchall()]
+
+    return list_of_countries
+
+

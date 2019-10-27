@@ -24,20 +24,26 @@ def save_films_to_db():
         try:
             film_database_cursor.execute("INSERT INTO films_db.films(%s) VALUES(%s)" % (columns_to_sql, values_to_sql))
         except Exception:
-            index += 1
             continue
 
-        try:
+        if 'actors' in info_about_film.keys():
             add_actors_to_db(info_about_film['actors'])
-            add_genre_to_db(info_about_film['genre'])
-            add_country_to_db(info_about_film['country'])
             create_relationships_film_actor(index, info_about_film['actors'])
-            create_relationships_film_genre(index, info_about_film['genre'])
-            create_relationships_film_country(index, info_about_film['country'])
-        except Exception:
-            index += 1
-            continue
+        else:
+            print('actors not in json')
 
+        if 'genre' in info_about_film.keys():
+            add_genre_to_db(info_about_film['genre'])
+            create_relationships_film_genre(index, info_about_film['genre'])
+
+        else:
+            print('genre not in json')
+
+        if 'country' in info_about_film.keys():
+            add_country_to_db(info_about_film['country'])
+            create_relationships_film_country(index, info_about_film['country'])
+        else:
+            print('country not in json')
         index += 1
 
 
@@ -168,3 +174,16 @@ def get_countries_for_film(film_name):
     return list_of_countries
 
 
+def get_10_best_rated_films_with_parameters(**kwargs):
+    where_clause = ''
+
+    for column, value in kwargs:
+        if column == 'actors':
+            actor_placeholders = ', '.join(['%s'] * len(kwargs['actors']))
+            where_clause += 'WHERE actors.name IN (%s)' % actor_placeholders
+            sql_query = 'SELECT * FROM films_db.films ' \
+                        'JOIN films_db.film_actors ON films_db.actors.actor_id=film_actors.actor_id'
+
+            film_database_cursor.execute()
+
+save_films_to_db()

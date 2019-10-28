@@ -178,16 +178,20 @@ def get_countries_for_film(film_name):
     return list_of_countries
 
 
-def get_10_best_rated_films_with_parameters(**kwargs):
+def get_best_rated_films_with_parameters(limit, **kwargs):
     where_clause = ''
 
-    for column, value in kwargs:
+    for column, value in kwargs.items():
         if column == 'actors':
             actor_placeholders = ', '.join(['%s'] * len(kwargs['actors']))
             where_clause += 'WHERE actors.name IN (%s)' % actor_placeholders
-            sql_query = 'SELECT * FROM films_db.films ' \
-                        'JOIN films_db.film_actors ON films_db.actors.actor_id=film_actors.actor_id'
 
-            film_database_cursor.execute()
+            sql_query = f"SELECT * from films_db.films " \
+                        f"JOIN films_db.film_actors ON film_actors.film_id = films.film_id " \
+                        f"JOIN films_db.actors ON actors.actor_id = film_actors.actor_id {where_clause} " \
+                        f"ORDER BY films_db.films.imdb_rating DESC LIMIT {limit}"
 
-save_films_to_db()
+            film_database_cursor.execute(sql_query, tuple(kwargs['actors']))
+            print(film_database_cursor.fetchall())
+
+get_best_rated_films_with_parameters(5, actors=['Скарлетт Йоханссон'])

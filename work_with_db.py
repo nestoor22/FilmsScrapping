@@ -181,17 +181,29 @@ def get_countries_for_film(film_name):
 def get_best_rated_films_with_parameters(limit, **kwargs):
     where_clause = ''
 
+    sql_query = f"SELECT * from films_db.films "
     for column, value in kwargs.items():
         if column == 'actors':
             actor_placeholders = ', '.join(['%s'] * len(kwargs['actors']))
-            where_clause += 'WHERE actors.name IN (%s)' % actor_placeholders
+            # where_clause += 'WHERE name IN (%s) ' % actor_placeholders
+            sql_query += f"JOIN film_actors ON film_actors.film_id = films.film_id " \
+                         f"JOIN actors ON actors.actor_id = film_actors.actor_id " \
+                         f"AND actors.name IN (%s) " % actor_placeholders
+            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['actors'])
 
-            sql_query = f"SELECT * from films_db.films " \
-                        f"JOIN films_db.film_actors ON film_actors.film_id = films.film_id " \
-                        f"JOIN films_db.actors ON actors.actor_id = film_actors.actor_id {where_clause} " \
-                        f"ORDER BY films_db.films.imdb_rating DESC LIMIT {limit}"
+        elif column == 'genres':
+            genres_placeholders = ', '.join(['%s'] * len(kwargs['genres']))
+            # where_clause = where_clause + 'AND WHERE genre_name IN (%s)' % genres_placeholders \
+            #     if where_clause != '' else 'WHERE genre_name IN (%s)' % genres_placeholders
 
-            film_database_cursor.execute(sql_query, tuple(kwargs['actors']))
-            print(film_database_cursor.fetchall())
+            sql_query += f"JOIN film_genre ON film_genre.film_id = films.film_id " \
+                         f"JOIN genres ON genres.genre_id = film_genre.genre_id " \
+                         f"AND genres.genre_name IN (%s) " % genres_placeholders
+            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['genres'])
 
-get_best_rated_films_with_parameters(5, actors=['Скарлетт Йоханссон'])
+    film_database_cursor.execute(sql_query)
+    print(film_database_cursor.fetchall())
+
+
+get_best_rated_films_with_parameters(5, actors=['Скарлетт Йоханссон'],
+                                     genres=['боевик'])

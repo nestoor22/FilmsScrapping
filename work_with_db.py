@@ -185,7 +185,7 @@ def get_best_rated_films_with_parameters(limit, **kwargs):
     for column, value in kwargs.items():
         if column == 'actors':
             actor_placeholders = ', '.join(['%s'] * len(kwargs['actors']))
-            # where_clause += 'WHERE name IN (%s) ' % actor_placeholders
+
             sql_query += f"JOIN film_actors ON film_actors.film_id = films.film_id " \
                          f"JOIN actors ON actors.actor_id = film_actors.actor_id " \
                          f"AND actors.name IN (%s) " % actor_placeholders
@@ -193,17 +193,25 @@ def get_best_rated_films_with_parameters(limit, **kwargs):
 
         elif column == 'genres':
             genres_placeholders = ', '.join(['%s'] * len(kwargs['genres']))
-            # where_clause = where_clause + 'AND WHERE genre_name IN (%s)' % genres_placeholders \
-            #     if where_clause != '' else 'WHERE genre_name IN (%s)' % genres_placeholders
 
             sql_query += f"JOIN film_genre ON film_genre.film_id = films.film_id " \
                          f"JOIN genres ON genres.genre_id = film_genre.genre_id " \
                          f"AND genres.genre_name IN (%s) " % genres_placeholders
             sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['genres'])
 
-    film_database_cursor.execute(sql_query)
-    print(film_database_cursor.fetchall())
+        elif column == 'countries':
+            countries_placeholders = ', '.join(['%s'] * len(kwargs['countries']))
+            sql_query += f"JOIN film_country ON film_country.film_id = films.film_id " \
+                         f"JOIN countries ON countries.country_id =film_country.country_id " \
+                         f"AND countries.name IN (%s) " % countries_placeholders
+
+            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['countries'])
+
+    sql_query += f"ORDER BY imdb_rating DESC LIMIT {limit}"
+
+    return film_database_cursor.execute(sql_query)
 
 
-get_best_rated_films_with_parameters(5, actors=['Скарлетт Йоханссон'],
-                                     genres=['боевик'])
+get_best_rated_films_with_parameters(1, actors=['Скарлетт Йоханссон'],
+                                     genres=['драма'],
+                                     countries=['Украина'])

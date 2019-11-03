@@ -50,6 +50,8 @@ def save_films_to_db():
 
         index += 1
 
+    count_films_for_actor()
+
 
 def add_actors_to_db(actors_list):
     if not actors_list:
@@ -178,10 +180,9 @@ def get_countries_for_film(film_name):
     return list_of_countries
 
 
-def get_best_rated_films_with_parameters(limit, **kwargs):
-    where_clause = ''
-
+def get_best_rated_films_with_parameters(limit=5, **kwargs):
     sql_query = f"SELECT * from films_db.films "
+
     for column, value in kwargs.items():
         if column == 'actors':
             actor_placeholders = ', '.join(['%s'] * len(kwargs['actors']))
@@ -212,6 +213,10 @@ def get_best_rated_films_with_parameters(limit, **kwargs):
     return film_database_cursor.execute(sql_query)
 
 
-get_best_rated_films_with_parameters(1, actors=['Скарлетт Йоханссон'],
-                                     genres=['драма'],
-                                     countries=['Украина'])
+def count_films_for_actor():
+    film_database_cursor.execute("""SELECT actor_id FROM films_db.actors ORDER BY actor_id""")
+    all_actors_ids = film_database_cursor.fetchall()
+    for ids in all_actors_ids:
+        film_database_cursor.execute(f"SELECT COUNT(*) FROM films_db.film_actors WHERE actor_id={ids['actor_id']}")
+        film_database_cursor.execute(f"UPDATE films_db.actors SET number_of_films="
+                                     f"{film_database_cursor.fetchone()['COUNT(*)']} WHERE actor_id={ids['actor_id']}")

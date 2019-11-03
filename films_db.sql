@@ -37,12 +37,13 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 -- Table `films_db`.`actors`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `films_db`.`actors` (
-  `actor_id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(100) NOT NULL,
+CREATE TABLE `actors` (
+  `actor_id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `number_of_films` int(11) DEFAULT NULL,
   PRIMARY KEY (`actor_id`),
-  INDEX `Actor_Name` (`name` ASC) VISIBLE)
-ENGINE = InnoDB;
+  KEY `Actor_Name` (`name`))
+ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------

@@ -51,6 +51,7 @@ def save_films_to_db():
         index += 1
 
     count_films_for_actor()
+    film_database_connection.commit()
 
 
 def add_actors_to_db(actors_list):

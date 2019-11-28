@@ -2,8 +2,7 @@ from elasticsearch import Elasticsearch
 from work_with_db import clean_json_from_incomplete_data
 import json
 
-films_info = clean_json_from_incomplete_data(json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json',
-                                                            'r')))
+films_info = clean_json_from_incomplete_data(json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json')))
 es_engine = Elasticsearch([{'host': '127.0.0.1', 'port': 9200}])
 
 

@@ -4,13 +4,13 @@ import scrapy
 translate_for_keys = {'Год': 'release_date', 'Страна': 'country', 'Жанр': 'genre'}
 
 
-# for running - scrapy crawl ex_fs_net_films_spider
-class ExFsNetFilmsSpider(scrapy.Spider):
+# for running - scrapy crawl ex_fs_net_spider
+class ExFsNetSpider(scrapy.Spider):
     # Spider name
-    name = 'ex_fs_net_films_spider'
+    name = 'ex_fs_net_spider'
 
     def start_requests(self):
-        start_urls = ['http://ex-fs.net/films/']
+        start_urls = ['http://ex-fs.net/series/', 'http://ex-fs.net/films/', 'http://ex-fs.net/cartoon/']
 
         for url in start_urls:
             yield scrapy.Request(url=url, callback=self.parse)

@@ -16,26 +16,36 @@ class ExFsNetSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        for film_page_link in response.css('div[class="MiniPost"]'):
+        for page_link in response.css('div[class="MiniPost"]'):
             # Get link from each mini-poster to film page
-            film_page_link = film_page_link.css('a[class="MiniPostPoster"]::attr(href)').get()
-            yield scrapy.Request(url=film_page_link, callback=self.parse_info)
+            page_link = page_link.css('a[class="MiniPostPoster"]::attr(href)').get()
+            start_url = response.request.url
+            if 'series' in start_url:
+                tv_show_type = 'serie'
+            elif 'cartoon' in start_url:
+                tv_show_type = 'cartoon'
+            else:
+                tv_show_type = 'film'
+            yield scrapy.Request(url=page_link, callback=self.parse_info,  meta={'tv_show_type': tv_show_type})
 
         # Get next page if exist and make recursion call
         if response.css('div[class="navigations"]'):
             next_page_link = response.css('div[class="navigations"] a::attr(href)').getall()[-1]
+
             yield scrapy.Request(url=next_page_link, callback=self.parse)
 
     def parse_info(self, response):
         # Create a dict for storing information
         information_about_film = dict()
-
         information_about_film['poster_url'] = 'http://ex-fs.net/' + response.css('div[class="FullstoryFormLeft"]'
-                                                                                        ' img::attr(src)').get()
+                                                                                  ' img::attr(src)').get()
+        information_about_film['tv_show_type'] = response.meta.get('tv_show_type')
 
         # Save film name in english and russian.
-        information_about_film['name_rus'] = clean_strings_from_bad_characters(response.css('h1[class="view-caption"]::text').get())
-        information_about_film['name_eng'] = clean_strings_from_bad_characters(response.css('h2[class="view-caption2"]::text').get())
+        information_about_film['name_rus'] = clean_strings_from_bad_characters(response.css('h1[class="view-'
+                                                                                            'caption"]::text').get())
+        information_about_film['name_eng'] = clean_strings_from_bad_characters(response.css('h2[class="view-'
+                                                                                            'caption2"]::text').get())
 
         # Add IMDB rating
         information_about_film['imdb_rating'] = float(response.css('div[class="in_kp_imdb"] '
@@ -66,8 +76,9 @@ class ExFsNetSpider(scrapy.Spider):
 
 def clean_strings_from_bad_characters(string):
     import re
+    string = string.strip()
     if string:
-        return re.sub(r'[^A-Za-zА-Яа-я\\.,\d?! ]', ' ', str(string))
+        return re.sub(r"[^A-Za-zА-Яа-я\\.,\-\d?!']", '', str(string))
 
 
 def get_image_from_url_as_base64(image_url):

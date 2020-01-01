@@ -7,6 +7,9 @@ film_database_connection = connect(host='127.0.0.1', port=3306, use_pure=True,
 film_database_cursor = film_database_connection.cursor(dictionary=True,
                                                        buffered=True)
 
+film_database_cursor.execute("""SELECT name_rus FROM films_db.films""")
+films_list = [name['name_rus'] for name in film_database_cursor.fetchall()]
+
 
 def clean_json_from_incomplete_data(json_info):
     all_columns_in_json = ['poster_url', 'name_rus', 'name_eng', 'imdb_rating',
@@ -21,8 +24,8 @@ def clean_json_from_incomplete_data(json_info):
 
 def save_films_to_db():
 
-    films_info = clean_json_from_incomplete_data(json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json',
-                                                                'r')))
+    films_info = clean_json_from_incomplete_data(json.load(open('FilmsScrapping/FilmsScrapping/films_info_in_json.json'
+                                                                )))
     film_database_cursor.execute("DESC films_db.films")
     films_info_columns = [column_info['Field'] for column_info in film_database_cursor.fetchall()]
 
@@ -191,7 +194,7 @@ def get_best_rated_films_with_parameters(limit=5, **kwargs):
             sql_query += f"JOIN film_actors ON film_actors.film_id = films.film_id " \
                          f"JOIN actors ON actors.actor_id = film_actors.actor_id " \
                          f"AND actors.name IN (%s) " % actor_placeholders
-            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['actors'])
+            sql_query %= ','.join("'" + str(value) + "'" for value in kwargs['actors'])
 
         elif column == 'genres':
             genres_placeholders = ', '.join(['%s'] * len(kwargs['genres']))
@@ -199,7 +202,7 @@ def get_best_rated_films_with_parameters(limit=5, **kwargs):
             sql_query += f"JOIN film_genre ON film_genre.film_id = films.film_id " \
                          f"JOIN genres ON genres.genre_id = film_genre.genre_id " \
                          f"AND genres.genre_name IN (%s) " % genres_placeholders
-            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['genres'])
+            sql_query %= ','.join("'" + str(value) + "'" for value in kwargs['genres'])
 
         elif column == 'countries':
             countries_placeholders = ', '.join(['%s'] * len(kwargs['countries']))
@@ -207,7 +210,7 @@ def get_best_rated_films_with_parameters(limit=5, **kwargs):
                          f"JOIN countries ON countries.country_id =film_country.country_id " \
                          f"AND countries.name IN (%s) " % countries_placeholders
 
-            sql_query = sql_query % ','.join("'"+str(value)+"'" for value in kwargs['countries'])
+            sql_query %= ','.join("'" + str(value) + "'" for value in kwargs['countries'])
 
     sql_query += f"ORDER BY imdb_rating DESC LIMIT {limit}"
 

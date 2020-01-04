@@ -1,5 +1,5 @@
 import scrapy
-
+import mtranslate
 
 translate_for_keys = {'Год': 'release_date', 'Страна': 'country', 'Жанр': 'genre'}
 
@@ -63,22 +63,33 @@ class ExFsNetSpider(scrapy.Spider):
             one_property = one_select.css('a::text').getall()
             if one_property:
                 information_about_film[story_info_keys[information_index]] = one_property
+                if 'country' in information_about_film:
+                    information_about_film['country_rus'] = information_about_film['country']
+                    information_about_film['country_eng'] = []
+                    for country in information_about_film['country_rus']:
+                        information_about_film['country_eng'].append(mtranslate.translate(country, 'en'))
             information_index += 1
 
         information_about_film['release_date'] = int(information_about_film['release_date'][0])
-        information_about_film['plot'] = clean_strings_from_bad_characters(response.css('div[class="FullstorySubFormText"]::text').get())
+        information_about_film['plot_rus'] = clean_strings_from_bad_characters(response.css('div[class="Fullstory'
+                                                                                            'SubFormText"]::text').get())
 
-        information_about_film['actors'] = response.css('div[class="FullstoryKadrFormImgAc"] '
-                                                        'a[class="MiniPostNameActors"]::text').getall()
+        information_about_film['plot_eng'] = mtranslate.translate(information_about_film['plot_rus'], 'en')
+
+        information_about_film['actors_rus'] = response.css('div[class="FullstoryKadrFormImgAc"] '
+                                                            'a[class="MiniPostNameActors"]::text').getall()
+        information_about_film['actors_eng'] = []
+        for actor in information_about_film['actors']:
+            information_about_film['actors_eng'].append(mtranslate.translate(actor, 'en'))
 
         yield information_about_film
 
 
 def clean_strings_from_bad_characters(string):
-    import re
-    string = string.strip()
+    import regex as re
     if string:
-        return re.sub(r"[^A-Za-zА-Яа-я\\.,\-\d?!']", '', str(string))
+        string = string.strip()
+        return re.sub(r"[^\w\d\. ]", '', str(string))
 
 
 def get_image_from_url_as_base64(image_url):

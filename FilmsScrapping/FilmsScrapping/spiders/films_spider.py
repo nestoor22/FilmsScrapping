@@ -79,7 +79,7 @@ class ExFsNetSpider(scrapy.Spider):
         information_about_film['actors_rus'] = response.css('div[class="FullstoryKadrFormImgAc"] '
                                                             'a[class="MiniPostNameActors"]::text').getall()
         information_about_film['actors_eng'] = []
-        for actor in information_about_film['actors']:
+        for actor in information_about_film['actors_rus']:
             information_about_film['actors_eng'].append(mtranslate.translate(actor, 'en'))
 
         yield information_about_film

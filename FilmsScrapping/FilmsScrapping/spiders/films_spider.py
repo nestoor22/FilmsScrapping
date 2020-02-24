@@ -1,100 +1,61 @@
 import scrapy
 import mtranslate
 
-translate_for_keys = {'Год': 'release_date', 'Страна': 'country', 'Жанр': 'genre'}
-
 
 # for running - scrapy crawl ex_fs_net_spider
 class ExFsNetSpider(scrapy.Spider):
     # Spider name
-    name = 'ex_fs_net_spider'
+    name = 'movie_db_spider'
 
     def start_requests(self):
-        start_urls = ['http://ex-fs.net/series/', 'http://ex-fs.net/films/', 'http://ex-fs.net/cartoon/']
+        start_urls = ['https://www.themoviedb.org/movie/', 'https://www.themoviedb.org/tv/']
 
         for url in start_urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        for page_link in response.css('div[class="MiniPost"]'):
+        for page_link in response.css('div[class="item poster card"]'):
             # Get link from each mini-poster to film page
-            page_link = page_link.css('a[class="MiniPostPoster"]::attr(href)').get()
+            page_link = page_link.css('a[class="result"]::attr(href)').get()
+            page_link = 'https://www.themoviedb.org' + page_link
             start_url = response.request.url
-            if 'series' in start_url:
+            if 'tv' in start_url:
                 tv_show_type = 'serie'
-            elif 'cartoon' in start_url:
-                tv_show_type = 'cartoon'
             else:
                 tv_show_type = 'film'
             yield scrapy.Request(url=page_link, callback=self.parse_info,  meta={'tv_show_type': tv_show_type})
 
         # Get next page if exist and make recursion call
-        if response.css('div[class="navigations"]'):
-            next_page_link = response.css('div[class="navigations"] a::attr(href)').getall()[-1]
-
-            yield scrapy.Request(url=next_page_link, callback=self.parse)
+        if response.css('div[class="pagination"]'):
+            next_page_link = response.css('div[class="pagination"] a::attr(href)').getall()[-1]
+            print("NEXT PAGE:", next_page_link)
+            yield scrapy.Request(url='https://www.themoviedb.org'+ next_page_link, callback=self.parse)
 
     def parse_info(self, response):
         # Create a dict for storing information
         information_about_film = dict()
-        information_about_film['poster_url'] = 'http://ex-fs.net/' + response.css('div[class="FullstoryFormLeft"]'
-                                                                                  ' img::attr(src)').get()
-        information_about_film['tv_show_type'] = response.meta.get('tv_show_type')
+        information_about_film['poster_url'] = response.css('div[class="image_content"] a::attr(href)').get()
+        information_about_film['showtype'] = response.meta.get('tv_show_type')
+        information_about_film['title'] = response.css('div[class="title"] h2::text').get()
+        information_about_film['release_date'] = response.css('div[class="title"] '
+                                                              'span[class="release_date"]::text').get().replace('(', '').replace(')', '')
+        information_about_film['plot'] = response.css('div[class="overview"] p::text').get()
+        information_about_film['genres'] = response.css('section[class="genres right_column"] a::text').getall()
 
-        # Save film name in english and russian.
-        information_about_film['name_rus'] = clean_strings_from_bad_characters(response.css('h1[class="view-'
-                                                                                            'caption"]::text').get())
-        information_about_film['name_eng'] = clean_strings_from_bad_characters(response.css('h2[class="view-'
-                                                                                            'caption2"]::text').get())
+        yield scrapy.Request(url=response.request.url+'/cast/', callback=self.parse_cast,
+                             meta={'information_about_film': information_about_film})
 
-        # Add IMDB rating
-        information_about_film['imdb_rating'] = float(response.css('div[class="in_kp_imdb"] '
-                                                                   'div[class="in_name_imdb"]::text').get())
-
-        story_info_keys = response.css('div[class="FullstoryInfo"] h4[class="FullstoryInfoTitle"]::text').getall()
-        story_info_keys = [translate_for_keys[key.replace(':', '')] for key in story_info_keys
-                           if key.replace(':', '') in translate_for_keys]
-
-        story_info_values = response.css('div[class="FullstoryInfo"] p[class="FullstoryInfoin"]')
-
-        # Story information about years of release date, country and genre
-        information_index = 0
-        for one_select in story_info_values:
-            one_property = one_select.css('a::text').getall()
-            if one_property:
-                information_about_film[story_info_keys[information_index]] = one_property
-                if 'country' in information_about_film:
-                    information_about_film['country_rus'] = information_about_film['country']
-                    information_about_film['country_eng'] = []
-                    for country in information_about_film['country_rus']:
-                        information_about_film['country_eng'].append(mtranslate.translate(country, 'en'))
-            information_index += 1
-
-        information_about_film['release_date'] = int(information_about_film['release_date'][0])
-        information_about_film['plot_rus'] = clean_strings_from_bad_characters(response.css('div[class="Fullstory'
-                                                                                            'SubFormText"]::text').get())
-
-        information_about_film['plot_eng'] = mtranslate.translate(information_about_film['plot_rus'], 'en')
-
-        information_about_film['actors_rus'] = response.css('div[class="FullstoryKadrFormImgAc"] '
-                                                            'a[class="MiniPostNameActors"]::text').getall()
-        information_about_film['actors_eng'] = []
-        for actor in information_about_film['actors_rus']:
-            information_about_film['actors_eng'].append(mtranslate.translate(actor, 'en'))
-
+    def parse_cast(self, response):
+        information_about_film = response.meta.get('information_about_film')
+        information_about_film['cast'] = []
+        cast = response.css('div[class="info"] a::attr(href)').getall()
+        for link in cast:
+            if 'person' in link:
+                actor_name = link.split('/')[-1]
+                if '-' in actor_name:
+                    actor_name = actor_name[actor_name.index('-'):].replace('-', ' ')
+                    information_about_film['cast'].append(actor_name.strip())
         yield information_about_film
 
-
-def clean_strings_from_bad_characters(string):
-    import regex as re
-    if string:
-        string = string.strip()
-        return re.sub(r"[^\w\d\. ]", '', str(string))
-
-
-def get_image_from_url_as_base64(image_url):
-    import base64
-    import requests
-
-    return base64.b64encode(requests.get('http://ex-fs.net/' + image_url).content)
-
+    def get_actor_name(self, response):
+        yield response.css('div[class="title"] h2::text').get()
